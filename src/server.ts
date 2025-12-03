@@ -47,8 +47,6 @@ const initDb = async () => {
 
 initDb();
 
-
-
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello sadman!");
 });
@@ -75,30 +73,57 @@ app.post("/users", async (req: Request, res: Response) => {
       message: error.message,
     });
   }
-
 });
 
-app.get("/users", async (req:Request, res:Response)=>{
-
+app.get("/users", async (req: Request, res: Response) => {
   try {
     const usersData = await pool.query(`
       SELECT * FROM users
     `);
 
     res.status(201).json({
-      success : true,
+      success: true,
       message: "Data fetched successfully",
-      data: usersData.rows
-    })
-    
+      data: usersData.rows,
+    });
   } catch (error: any) {
     res.status(500).json({
       success: false,
       message: error.message,
     });
-    
   }
-  
+});
+
+app.get("/users/:id", async (req: Request, res: Response) => {
+  const id = req.params.id;
+  console.log(id);
+
+  try {
+    const user = await pool.query(
+      `
+      SELECT * FROM users WHERE id = $1
+    `,
+      [id]
+    );
+
+    if (user.rows.length === 0) {
+      res.status(404).json({
+        success: false,
+        message: "Data not found",
+      });
+    } else {
+      res.status(201).json({
+        success: true,
+        message: "Data fetched successfully",
+        data: user.rows,
+      });
+    }
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 });
 
 app.listen(port, () => {

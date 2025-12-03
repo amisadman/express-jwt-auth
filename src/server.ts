@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { Pool } from "pg";
 import dotenv from "dotenv";
 import path from "path";
-dotenv.config({path: path.join(process.cwd(), ".env")});
+dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 const app = express();
 const port = 5000;
@@ -29,8 +29,8 @@ const initDb = async () => {
             )
         `);
 
-        await pool.query(
-            `CREATE TABLE IF NOT EXISTS todos(
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS todos(
              id SERIAL PRIMARY KEY,
              userid INT REFERENCES users(id) ON DELETE CASCADE,
              title VARCHAR(200) NOT NULL,
@@ -41,8 +41,8 @@ const initDb = async () => {
              updated_at TIMESTAMP DEFAULT NOW()
 
             )
-            ` 
-        );
+            `
+  );
 };
 
 initDb();
@@ -51,8 +51,28 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Hello sadman!");
 });
 
-app.post("/", (req: Request, res: Response) => {
-  console.log(req.body);
+app.post("/users", async (req: Request, res: Response) => {
+  const { name, email } = req.body;
+
+  try {
+    const q = await pool.query(
+      `
+            INSERT INTO users(name,email) VALUES ($1,$2) RETURNING *
+            `,
+      [name, email]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: q.rows[0],
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.details,
+    });
+  }
+
   res.status(201).json({
     success: true,
     message: "API is working",

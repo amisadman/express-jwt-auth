@@ -1,7 +1,8 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { Pool, Result } from "pg";
 import dotenv from "dotenv";
 import path from "path";
+import fs from "fs";
 dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 const app = express();
@@ -46,13 +47,26 @@ const initDb = async () => {
 };
 
 initDb();
+//logger
+const filePath = path.join(process.cwd(),"./src/logger.txt");
+const logger = (req: Request,res:Response,next:NextFunction)=>{
+  const log = `[${new Date().toISOString()}] ${req.method} ${req.path} \n`;
+  fs.appendFile(filePath,log,(err)=>{
+    if(err){
+      console.log(err.message);
+    }else{
+      console.log("Log added successfully");
+      console.log(log);
+    }
+  })
+}
 
-app.get("/", (req: Request, res: Response) => {
+app.get("/", logger, (req: Request, res: Response) => {
   res.send("Hello sadman!");
 });
 
 //users CRUD
-app.post("/users", async (req: Request, res: Response) => {
+app.post("/users",logger, async (req: Request, res: Response) => {
   const { name, email } = req.body;
 
   try {
@@ -75,7 +89,7 @@ app.post("/users", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/users", async (req: Request, res: Response) => {
+app.get("/users",logger, async (req: Request, res: Response) => {
   try {
     const usersData = await pool.query(`
       SELECT * FROM users
@@ -94,7 +108,7 @@ app.get("/users", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/users/:id", async (req: Request, res: Response) => {
+app.get("/users/:id",logger, async (req: Request, res: Response) => {
   const id = req.params.id;
   console.log(id);
 
@@ -126,7 +140,7 @@ app.get("/users/:id", async (req: Request, res: Response) => {
   }
 });
 
-app.put("/users/:id", async (req: Request, res: Response) => {
+app.put("/users/:id",logger, async (req: Request, res: Response) => {
   const id = req.params.id;
   console.log(id);
 
@@ -158,7 +172,7 @@ app.put("/users/:id", async (req: Request, res: Response) => {
   }
 });
 
-app.delete("/users/:id", async (req: Request, res: Response) => {
+app.delete("/users/:id",logger, async (req: Request, res: Response) => {
   const id = req.params.id;
   console.log(id);
 
@@ -191,7 +205,7 @@ app.delete("/users/:id", async (req: Request, res: Response) => {
 });
 
 //todo
-app.post("/todos", async (req: Request, res: Response) => {
+app.post("/todos",logger, async (req: Request, res: Response) => {
   const todo = req.body;
   console.log(todo);
   try {
@@ -212,7 +226,7 @@ app.post("/todos", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/todos", async (req: Request, res: Response) => {
+app.get("/todos",logger, async (req: Request, res: Response) => {
   try {
     const todoData = await pool.query(`
       SELECT * FROM todos
@@ -230,7 +244,7 @@ app.get("/todos", async (req: Request, res: Response) => {
     });
   }
 });
-app.get("/todos/:id", async (req: Request, res: Response) => {
+app.get("/todos/:id",logger, async (req: Request, res: Response) => {
   console.log(req.params.id);
   try {
     const todoData = await pool.query(`
@@ -249,7 +263,7 @@ app.get("/todos/:id", async (req: Request, res: Response) => {
     });
   }
 });
-app.get("/todos/user/:id", async (req: Request, res: Response) => {
+app.get("/todos/user/:id",logger, async (req: Request, res: Response) => {
   console.log(req.params.id);
   try {
     const todoData = await pool.query(`
@@ -268,7 +282,7 @@ app.get("/todos/user/:id", async (req: Request, res: Response) => {
     });
   }
 });
-app.put("/todos/:id", async (req: Request, res: Response) => {
+app.put("/todos/:id",logger, async (req: Request, res: Response) => {
   console.log(req.params.id);
   try {
     const todoData = await pool.query(`
@@ -287,7 +301,7 @@ app.put("/todos/:id", async (req: Request, res: Response) => {
     });
   }
 });
-app.delete("/todos/:id", async (req: Request, res: Response) => {
+app.delete("/todos/:id",logger, async (req: Request, res: Response) => {
   console.log(req.params.id);
   try {
     const todoData = await pool.query(`

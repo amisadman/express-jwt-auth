@@ -135,7 +135,7 @@ app.put("/users/:id", async (req: Request, res: Response) => {
       `
       UPDATE users SET name=$1, email=$2 WHERE id=$3 RETURNING *
     `,
-      [req.body.name,req.body.email,req.params.id]
+      [req.body.name, req.body.email, req.params.id]
     );
 
     if (user.rows.length === 0) {
@@ -190,6 +190,46 @@ app.delete("/users/:id", async (req: Request, res: Response) => {
   }
 });
 
+//todo
+app.post("/todos", async (req: Request, res: Response) => {
+  const todo = req.body;
+  console.log(todo);
+  try {
+    const result = await pool.query(
+      `INSERT INTO todos (userid,title) VALUES($1,$2) RETURNING *`,
+      [req.body.userid, req.body.title]
+    );
+    res.status(201).json({
+      success: true,
+      message: "Todo created successfully",
+      data: result.rows[0],
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+app.get("/todos", async (req: Request, res: Response) => {
+  try {
+    const todoData = await pool.query(`
+      SELECT * FROM todos
+    `);
+
+    res.status(201).json({
+      success: true,
+      message: "Data fetched successfully",
+      data: todoData.rows,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);

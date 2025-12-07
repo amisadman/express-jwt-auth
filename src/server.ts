@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { Pool } from "pg";
+import { Pool, Result } from "pg";
 import dotenv from "dotenv";
 import path from "path";
 dotenv.config({ path: path.join(process.cwd(), ".env") });
@@ -249,6 +249,71 @@ app.get("/todos/:id", async (req: Request, res: Response) => {
     });
   }
 });
+app.get("/todos/user/:id", async (req: Request, res: Response) => {
+  console.log(req.params.id);
+  try {
+    const todoData = await pool.query(`
+      SELECT * FROM todos WHERE userid=$1
+    `,[req.params.id]);
+
+    res.status(201).json({
+      success: true,
+      message: "Data fetched successfully",
+      data: todoData.rows,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+app.put("/todos/:id", async (req: Request, res: Response) => {
+  console.log(req.params.id);
+  try {
+    const todoData = await pool.query(`
+      UPDATE todos SET title=$1 WHERE id=$2 RETURNING *
+    `,[req.body.title,req.params.id]);
+
+    res.status(201).json({
+      success: true,
+      message: "Data updated successfully",
+      data: todoData.rows,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+app.delete("/todos/:id", async (req: Request, res: Response) => {
+  console.log(req.params.id);
+  try {
+    const todoData = await pool.query(`
+      DELETE FROM todos WHERE id=$1 RETURNING *
+    `,[req.params.id]);
+
+ if (todoData.rowCount === 0) {
+      res.status(404).json({
+        success: false,
+        message: "Data not found",
+      });
+    } else {
+      res.status(201).json({
+        success: true,
+        message: "Data Deleted successfully",
+        data: todoData.rows,
+      });
+    }
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 
 
 app.listen(port, () => {

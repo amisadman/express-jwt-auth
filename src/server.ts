@@ -48,25 +48,26 @@ const initDb = async () => {
 
 initDb();
 //logger
-const filePath = path.join(process.cwd(),"./src/logger.txt");
-const logger = (req: Request,res:Response,next:NextFunction)=>{
+const filePath = path.join(process.cwd(), "./src/logger.txt");
+const logger = (req: Request, res: Response, next: NextFunction) => {
   const log = `[${new Date().toISOString()}] ${req.method} ${req.path} \n`;
-  fs.appendFile(filePath,log,(err)=>{
-    if(err){
+  fs.appendFile(filePath, log, (err) => {
+    if (err) {
       console.log(err.message);
-    }else{
+    } else {
       console.log("Log added successfully");
       console.log(log);
     }
-  })
-}
+  });
+  next();
+};
 
 app.get("/", logger, (req: Request, res: Response) => {
   res.send("Hello sadman!");
 });
 
 //users CRUD
-app.post("/users",logger, async (req: Request, res: Response) => {
+app.post("/users", logger, async (req: Request, res: Response) => {
   const { name, email } = req.body;
 
   try {
@@ -89,7 +90,7 @@ app.post("/users",logger, async (req: Request, res: Response) => {
   }
 });
 
-app.get("/users",logger, async (req: Request, res: Response) => {
+app.get("/users", logger, async (req: Request, res: Response) => {
   try {
     const usersData = await pool.query(`
       SELECT * FROM users
@@ -108,7 +109,7 @@ app.get("/users",logger, async (req: Request, res: Response) => {
   }
 });
 
-app.get("/users/:id",logger, async (req: Request, res: Response) => {
+app.get("/users/:id", logger, async (req: Request, res: Response) => {
   const id = req.params.id;
   console.log(id);
 
@@ -140,7 +141,7 @@ app.get("/users/:id",logger, async (req: Request, res: Response) => {
   }
 });
 
-app.put("/users/:id",logger, async (req: Request, res: Response) => {
+app.put("/users/:id", logger, async (req: Request, res: Response) => {
   const id = req.params.id;
   console.log(id);
 
@@ -172,7 +173,7 @@ app.put("/users/:id",logger, async (req: Request, res: Response) => {
   }
 });
 
-app.delete("/users/:id",logger, async (req: Request, res: Response) => {
+app.delete("/users/:id", logger, async (req: Request, res: Response) => {
   const id = req.params.id;
   console.log(id);
 
@@ -205,7 +206,7 @@ app.delete("/users/:id",logger, async (req: Request, res: Response) => {
 });
 
 //todo
-app.post("/todos",logger, async (req: Request, res: Response) => {
+app.post("/todos", logger, async (req: Request, res: Response) => {
   const todo = req.body;
   console.log(todo);
   try {
@@ -226,7 +227,7 @@ app.post("/todos",logger, async (req: Request, res: Response) => {
   }
 });
 
-app.get("/todos",logger, async (req: Request, res: Response) => {
+app.get("/todos", logger, async (req: Request, res: Response) => {
   try {
     const todoData = await pool.query(`
       SELECT * FROM todos
@@ -244,12 +245,15 @@ app.get("/todos",logger, async (req: Request, res: Response) => {
     });
   }
 });
-app.get("/todos/:id",logger, async (req: Request, res: Response) => {
+app.get("/todos/:id", logger, async (req: Request, res: Response) => {
   console.log(req.params.id);
   try {
-    const todoData = await pool.query(`
+    const todoData = await pool.query(
+      `
       SELECT * FROM todos WHERE id=$1
-    `,[req.params.id]);
+    `,
+      [req.params.id]
+    );
 
     res.status(201).json({
       success: true,
@@ -263,12 +267,15 @@ app.get("/todos/:id",logger, async (req: Request, res: Response) => {
     });
   }
 });
-app.get("/todos/user/:id",logger, async (req: Request, res: Response) => {
+app.get("/todos/user/:id", logger, async (req: Request, res: Response) => {
   console.log(req.params.id);
   try {
-    const todoData = await pool.query(`
+    const todoData = await pool.query(
+      `
       SELECT * FROM todos WHERE userid=$1
-    `,[req.params.id]);
+    `,
+      [req.params.id]
+    );
 
     res.status(201).json({
       success: true,
@@ -282,12 +289,15 @@ app.get("/todos/user/:id",logger, async (req: Request, res: Response) => {
     });
   }
 });
-app.put("/todos/:id",logger, async (req: Request, res: Response) => {
+app.put("/todos/:id", logger, async (req: Request, res: Response) => {
   console.log(req.params.id);
   try {
-    const todoData = await pool.query(`
+    const todoData = await pool.query(
+      `
       UPDATE todos SET title=$1 WHERE id=$2 RETURNING *
-    `,[req.body.title,req.params.id]);
+    `,
+      [req.body.title, req.params.id]
+    );
 
     res.status(201).json({
       success: true,
@@ -301,14 +311,17 @@ app.put("/todos/:id",logger, async (req: Request, res: Response) => {
     });
   }
 });
-app.delete("/todos/:id",logger, async (req: Request, res: Response) => {
+app.delete("/todos/:id", logger, async (req: Request, res: Response) => {
   console.log(req.params.id);
   try {
-    const todoData = await pool.query(`
+    const todoData = await pool.query(
+      `
       DELETE FROM todos WHERE id=$1 RETURNING *
-    `,[req.params.id]);
+    `,
+      [req.params.id]
+    );
 
- if (todoData.rowCount === 0) {
+    if (todoData.rowCount === 0) {
       res.status(404).json({
         success: false,
         message: "Data not found",
@@ -328,7 +341,13 @@ app.delete("/todos/:id",logger, async (req: Request, res: Response) => {
   }
 });
 
-
+app.use((req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.path,
+  });
+});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);

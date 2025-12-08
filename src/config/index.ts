@@ -5,5 +5,6 @@ dotenv.config({ path: path.join(process.cwd(), ".env") });
 const config = {
   connection_string: process.env.CONNECTION_STRING,
   port: process.env.PORT,
+  salt: process.env.SALT,
 };
 export default config;
